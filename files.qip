@@ -29,3 +29,4 @@ set_global_assignment -name VERILOG_FILE dsp.v
 set_global_assignment -name VERILOG_FILE compat.v
 set_global_assignment -name SDC_FILE NES.sdc
 set_global_assignment -name SYSTEMVERILOG_FILE NES.sv
+set_global_assignment -name VERILOG_FILE joydb15.v
