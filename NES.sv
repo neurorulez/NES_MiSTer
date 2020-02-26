@@ -319,10 +319,10 @@ wire        forced_scandoubler;
 
 wire [21:0] gamma_bus;
 
-wire [22:0] joyA = |status[63:62] ? {joydb15_1[9],joydb15_1[7],joydb15_1[8],joydb15_1[6:0]} : joyA_USB;
-wire [22:0] joyB =  status[62]    ? {joydb15_2[9],joydb15_2[7],joydb15_2[8],joydb15_2[6:0]} : status[30] ? joyA_USB : joyB_USB;
-wire [22:0] joyC =  status[62] ? joyA_USB : status[62] ? joyB_USB : joyC_USB;
-wire [22:0] joyD =  status[62] ? joyB_USB : status[62] ? joyC_USB : joyD_USB;
+wire [22:0] joyA = |status[63:62] ? {joydb15_1[8],joydb15_1[9],joydb15_1[5:0]} : joyA_USB;
+wire [22:0] joyB =  status[63]    ? {joydb15_2[8],joydb15_2[9],joydb15_2[5:0]} : status[62] ? joyA_USB : joyB_USB;
+wire [22:0] joyC =  status[63] ? joyA_USB : status[62] ? joyB_USB : joyC_USB;
+wire [22:0] joyD =  status[63] ? joyB_USB : status[62] ? joyC_USB : joyD_USB;
 
 
 reg [15:0] joydb15_1,joydb15_2;
