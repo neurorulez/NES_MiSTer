@@ -527,7 +527,7 @@ always_comb begin
 		joypad1_data = {2'b0, mic, 1'b0, ~joy_swap ? joypad_bits[0] : ~USER_IN[5]};
 		joypad2_data = {serial_d4, ~USER_IN[2], 2'b00, ~joy_swap ? ~USER_IN[5] : joypad_bits2[0]};
 	end else if (raw_serial & raw_serial2) begin
-		USER_OUT[0] = joypad_strobe;
+		USER_OUT[0] = joypad_out[0];
 		USER_OUT[1] = ~joy_swap ? ~joypad_clock[1] : ~joypad_clock[0];
 		USER_OUT[6] = ~joy_swap ? ~joypad_clock[0] : ~joypad_clock[1];
 		joypad1_data = {2'b0, mic, 1'b0, ~joy_swap ? ~USER_IN[3] : ~USER_IN[5]};
