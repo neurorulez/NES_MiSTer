@@ -581,14 +581,14 @@ always_comb begin
 		USER_OUT[4] = 1'b1;
 		joypad1_data = {2'b0, mic, 1'b0, ~joy_swap ? ~USER_IN[3] : ~USER_IN[5]};
 		joypad2_data = {serial_d4, ~USER_IN[2], ~joy_swap ? ~USER_IN[5] : ~USER_IN[3], ~joy_swap ? ~USER_IN[3] : ~USER_IN[5]};
-	end else if (JOY_FLAG[0]) begin
+	end else if (JOY_FLAG[1]) begin
 		USER_OUT[0] = JOY_LOAD;
 		USER_OUT[1] = JOY_CLK;
 		USER_OUT[6] = 1'b1;
 		USER_OUT[4] = 1'b1;
 		joypad1_data = {2'b0, mic, paddle_en & paddle_btn, joypad_bits[0]};
 		joypad2_data = joypad_bits2[0];
-	end else if (JOY_FLAG[1]) begin
+	end else if (JOY_FLAG[2]) begin
 		USER_OUT[0] = JOY_MDSEL;
 		USER_OUT[1] = 1'b1;
 		USER_OUT[6] = 1'b1;
