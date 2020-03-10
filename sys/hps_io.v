@@ -43,6 +43,7 @@ module hps_io #(parameter STRLEN=0, PS2DIV=0, WIDE=0, VDNUM=1, PS2WE=0)
 	output reg [31:0] joystick_3,
 	output reg [31:0] joystick_4,
 	output reg [31:0] joystick_5,
+	input      [15:0] joy_raw,
 	
 	// analog -127..+127, Y: [15:8], X: [7:0]
 	output reg [15:0] joystick_analog_0,
@@ -313,6 +314,8 @@ always@(posedge clk_sys) begin
 			end else begin
 
 				case(cmd)
+					 // Reading user_io raw joy
+					'h0f, 'h37: io_dout <= joy_raw;
 					// buttons and switches
 					'h01: cfg <= io_din;
 					'h02: if(byte_cnt==1) joystick_0[15:0] <= io_din; else joystick_0[31:16] <= io_din;
