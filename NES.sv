@@ -329,8 +329,8 @@ wire [22:0] joyB = joydb_2ena ? {joydb_2[10],joydb_2[11],joydb_2[5:0]} : joydb_1
 wire [22:0] joyC = joydb_2ena ? joyA_USB : joydb_1ena ? joyB_USB : joyC_USB;
 wire [22:0] joyD = joydb_2ena ? joyB_USB : joydb_1ena ? joyC_USB : joyD_USB;
 
-wire [15:0] joydb_1 = JOY_FLAG[2] ? {JOYDB9MD_1[11],JOYDB9MD_1[10] | (JOYDB9MD_1[11] & JOYDB9MD_1[5]),JOYDB9MD_1[9:6],JOYDB9MD_1[4],JOYDB9MD_1[5],JOYDB9MD_1[3:0]} : JOY_FLAG[1] ? JOYDB15_1 : '0;
-wire [15:0] joydb_2 = JOY_FLAG[2] ? {JOYDB9MD_2[11],JOYDB9MD_2[10] | (JOYDB9MD_2[11] & JOYDB9MD_2[5]),JOYDB9MD_2[9:6],JOYDB9MD_2[4],JOYDB9MD_2[5],JOYDB9MD_2[3:0]} : JOY_FLAG[1] ? JOYDB15_2 : '0;
+wire [15:0] joydb_1 = JOY_FLAG[2] ? {JOYDB9MD_1[11],JOYDB9MD_1[10] | (JOYDB9MD_1[11] & JOYDB9MD_1[5]),JOYDB9MD_1[9:0]} : JOY_FLAG[1] ? JOYDB15_1 : '0;
+wire [15:0] joydb_2 = JOY_FLAG[2] ? {JOYDB9MD_2[11],JOYDB9MD_2[10] | (JOYDB9MD_2[11] & JOYDB9MD_2[5]),JOYDB9MD_2[9:0]} : JOY_FLAG[1] ? JOYDB15_2 : '0;
 wire        joydb_1ena = |JOY_FLAG[2:1];
 wire        joydb_2ena = |JOY_FLAG[2:1] & JOY_FLAG[0];
 
@@ -562,7 +562,7 @@ end
 assign USER_OUT[2] = 1'b1;
 assign USER_OUT[3] = 1'b1;
 assign USER_OUT[5] = 1'b1;
-//assign USER_OUT[6] = 1'b1;
+assign USER_OUT[7] = 1'b1;
 
 reg [4:0] joypad1_data, joypad2_data;
 
