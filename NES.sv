@@ -331,8 +331,8 @@ wire [22:0] joyD = joydb_2ena ? joyB_USB : joydb_1ena ? joyC_USB : joyD_USB;
 
 wire [15:0] joydb_1 = JOY_FLAG[2] ? {JOYDB9MD_1[11],JOYDB9MD_1[10] | (JOYDB9MD_1[11] & JOYDB9MD_1[5]),JOYDB9MD_1[9:0]} : JOY_FLAG[1] ? JOYDB15_1 : '0;
 wire [15:0] joydb_2 = JOY_FLAG[2] ? {JOYDB9MD_2[11],JOYDB9MD_2[10] | (JOYDB9MD_2[11] & JOYDB9MD_2[5]),JOYDB9MD_2[9:0]} : JOY_FLAG[1] ? JOYDB15_2 : '0;
-wire        joydb_1ena = |JOY_FLAG[2:1];
-wire        joydb_2ena = |JOY_FLAG[2:1] & JOY_FLAG[0];
+wire        joydb_1ena = |JOY_FLAG[2:1]               & ~OSD_STATUS;
+wire        joydb_2ena = |JOY_FLAG[2:1] & JOY_FLAG[0] & ~OSD_STATUS;
 
 reg [15:0] JOYDB9MD_1,JOYDB9MD_2;
 joy_db9md joy_db9md
