@@ -296,7 +296,7 @@ parameter CONF_STR = {
 };
 
 wire [22:0] joyA_USB,joyB_USB,joyC_USB,joyD_USB;
-wire [23:0] joyA_unmod;
+wire [23:0] joyA;
 wire [10:0] ps2_key;
 wire [1:0] buttons;
 
@@ -394,7 +394,7 @@ wire        forced_scandoubler;
 wire [21:0] gamma_bus;
 
 
-wire [31:0] joyA = joydb_1ena ?
+wire [31:0] joyA_unmod = joydb_1ena ?
 	!status[60] ? {
 		//SM BC UDLR
 		OSD_STATUS? 32'b000000 : {joydb_1[10],joydb_1[11]|(joydb_1[10]&joydb_1[5]),joydb_1[5],joydb_1[6],joydb_1[3:0]}
