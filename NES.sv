@@ -39,8 +39,9 @@ module emu
 
 	input  [11:0] HDMI_WIDTH,
 	input  [11:0] HDMI_HEIGHT,
+	output        FREEZE_IMAGE,
 
-`ifdef USE_FB
+`ifdef MISTER_FB
 	// Use framebuffer in DDRAM (USE_FB=1 in qsf)
 	// FB_FORMAT:
 	//    [2:0] : 011=8bpp(palette) 100=16bpp 101=24bpp 110=32bpp
@@ -58,6 +59,7 @@ module emu
 	input         FB_LL,
 	output        FB_FORCE_BLANK,
 
+`ifdef MISTER_FB_PALETTE
 	// Palette control for 8bit modes.
 	// Ignored for other video modes.
 	output        FB_PAL_CLK,
@@ -65,6 +67,7 @@ module emu
 	output [23:0] FB_PAL_DOUT,
 	input  [23:0] FB_PAL_DIN,
 	output        FB_PAL_WR,
+`endif
 `endif
 
 	output        LED_USER,  // 1 - ON, 0 - OFF.
@@ -96,7 +99,6 @@ module emu
 	output        SD_CS,
 	input         SD_CD,
 
-`ifdef USE_DDRAM
 	//High latency DDR3 RAM interface
 	//Use for non-critical time purposes
 	output        DDRAM_CLK,
@@ -109,9 +111,7 @@ module emu
 	output [63:0] DDRAM_DIN,
 	output  [7:0] DDRAM_BE,
 	output        DDRAM_WE,
-`endif
 
-`ifdef USE_SDRAM
 	//SDRAM interface with lower latency
 	output        SDRAM_CLK,
 	output        SDRAM_CKE,
@@ -124,10 +124,10 @@ module emu
 	output        SDRAM_nCAS,
 	output        SDRAM_nRAS,
 	output        SDRAM_nWE,
-`endif
 
-`ifdef DUAL_SDRAM
+`ifdef MISTER_DUAL_SDRAM
 	//Secondary SDRAM
+	//Set all output SDRAM_* signals to Z ASAP if SDRAM2_EN is 0
 	input         SDRAM2_EN,
 	output        SDRAM2_CLK,
 	output [12:0] SDRAM2_A,
@@ -184,7 +184,6 @@ assign VGA_SCALER = 0;
 
 assign VGA_F1 = 0;
 //assign {UART_RTS, UART_TXD, UART_DTR} = 0;
-assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0;
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 
 wire [1:0] ar       = status[19:18];
@@ -213,22 +212,18 @@ video_freak video_freak
 // 0         1         2         3          4         5         6
 // 01234567890123456789012345678901 23456789012345678901234567890123
 // 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
-// XXXXXXXX XX XXXXXXXXXXXXXXXXXXXX XXXXXXXXX
+// XXXXXXXX XX XXXXXXXXXXXXXXXXXXXX XXXXXXXXXXXXXXX
 
 `include "build_id.v"
 parameter CONF_STR = {
-	"NES;;",
+	"NES;SS3E000000:200000,UART31250,MIDI;",
 	"FS,NESFDSNSF;",
 	"H1F2,BIN,Load FDS BIOS;",
 	"-;",
 	"ONO,System Type,NTSC,PAL,Dendy;",
-	"OG,Disk Swap ("
-	};
-
-parameter CONF_STR2 = {
-	"),Auto,FDS button;",
+	"OG,Disk Swap,Auto,FDS button;",
 	"OCF,Palette,Smooth,Unsat.,FCEUX,NES Classic,Composite,PC-10,PVM,Wavebeam,Real,Sony CXA,YUV,Greyscale,Rockman9,Ninten.,Custom;",
-	"H3F3,PAL,Custom Palette;",
+	"H3FC3,PAL,Custom Palette;",
 	"-;",
 	"C,Cheats;",
 	"H2OK,Cheats Enabled,On,Off;",
@@ -237,9 +232,17 @@ parameter CONF_STR2 = {
 	"H5D0R6,Load Backup RAM;",
 	"H5D0R7,Save Backup RAM;",
 	"-;",
+	"oC,Savestates to SDCard,On,Off;",
+	"oDE,Savestate Slot,1,2,3,4;",
+	"d7rA,Save state(Alt+F1-F4);",
+	"d7rB,Restore state(F1-F4);",
+	"-;",
+	"o9,Pause when OSD is open,Off,On;",
+	"-;",
 	"P1,Audio & Video;",
-			"P1OIJ,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
-			"P1O13,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
+	"P1-;",
+	"P1OIJ,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
+	"P1O13,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"P1-;",
 	"d6P1O5,Vertical Crop,Disabled,216p(5x);",
 	"d6P1o36,Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
@@ -249,7 +252,6 @@ parameter CONF_STR2 = {
 			"P1ORS,Mask Edges,Off,Left,Both,Auto;",
 			"P1OP,Extra Sprites,Off,On;",
 			"P1-;",
-
 			"P1-;",
 			"P1OUV,Audio Enable,Both,Internal,Cart Expansion,None;",
 			"P2,Input Options;",
@@ -260,7 +262,7 @@ parameter CONF_STR2 = {
 			"P2-;",
 			"P2O9,Swap Joysticks,No,Yes;",
 			"P2OA,Multitap,Disabled,Enabled;",
-			"D7P2OQ,Serial Mode,None,SNAC;",
+			"D8P2OQ,Serial Mode,None,SNAC;",
 			"H4P2OB,SNAC Mode, 1 Player, 2 Players;",
 			"H4P2OT,SNAC Zapper,Off,On;",
 			"P2o02,Periphery,None,Zapper(Mouse),Zapper(Joy1),Zapper(Joy2),Vaus,Vaus(A-Trigger),Powerpad,Family Trainer;",
@@ -269,18 +271,33 @@ parameter CONF_STR2 = {
 			"P2OM,Crosshairs,On,Off;",
 	"-;",
 	"R0,Reset;",
-	"J1,A,B,Select,Start,FDS,Mic,Zapper/Vaus Btn,PP/Mat 1,PP/Mat 2,PP/Mat 3,PP/Mat 4,PP/Mat 5,PP/Mat 6,PP/Mat 7,PP/Mat 8,PP/Mat 9,PP/Mat 10,PP/Mat 11,PP/Mat 12;",
+	"J1,A,B,Select,Start,FDS,Mic,Zapper/Vaus Btn,PP/Mat 1,PP/Mat 2,PP/Mat 3,PP/Mat 4,PP/Mat 5,PP/Mat 6,PP/Mat 7,PP/Mat 8,PP/Mat 9,PP/Mat 10,PP/Mat 11,PP/Mat 12,Savestates;",
 	"jn,A,B,Select,Start,L,,R|P;",
 	"jp,B,Y,Select,Start,L,,R|P;",
 	"I,",
 	"Disk 1A,",
 	"Disk 1B,",
 	"Disk 2A,",
-	"Disk 2B;",
+	"Disk 2B,",
+	"Slot=DPAD|Save/Load=Start+DPAD,",
+	"Active Slot 1,",
+	"Active Slot 2,",
+	"Active Slot 3,",
+	"Active Slot 4,",
+	"Save to state 1,",
+	"Restore state 1,",
+	"Save to state 2,",
+	"Restore state 2,",
+	"Save to state 3,",
+	"Restore state 3,",
+	"Save to state 4,",
+	"Restore state 4;",
 	"V,v",`BUILD_DATE
 };
 
 wire [22:0] joyA_USB,joyB_USB,joyC_USB,joyD_USB;
+wire [23:0] joyA_unmod;
+wire [10:0] ps2_key;
 wire [1:0] buttons;
 
 wire [63:0] status;
@@ -434,11 +451,11 @@ joy_db15 joy_db15
 );
 
 
-hps_io #(.STRLEN(($size(CONF_STR)>>3) + ($size(CONF_STR2)>>3) + 2)) hps_io
+hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 (
 	.clk_sys(clk),
 	.HPS_BUS(HPS_BUS),
-	.conf_str({CONF_STR, diskside==3?"2B":diskside==2?"2A":diskside==1?"1B":"1A", CONF_STR2}),
+	.conf_str(CONF_STR),
 
 	.buttons(buttons),
 	.forced_scandoubler(forced_scandoubler),
@@ -456,9 +473,11 @@ hps_io #(.STRLEN(($size(CONF_STR)>>3) + ($size(CONF_STR2)>>3) + 2)) hps_io
 	.joy_raw(OSD_STATUS? (joydb_1[5:0]|joydb_2[5:0]) : 6'b000000 ),
 	
 	.status(status),
-	.status_menumask({raw_db9,en216p, status[17], ~raw_serial, (palette2_osd != 4'd14), ~gg_avail, bios_loaded, ~bk_ena}),
-	.info_req(diskside_info),
-	.info({1'b0,diskside} + 3'd1),
+	.status_menumask({raw_db9,(rom_loaded && mapper_has_savestate), en216p, status[17], ~raw_serial, (palette2_osd != 4'd14), ~gg_avail, bios_loaded, ~bk_ena}),
+	.status_in({status[63:47],ss_slot,status[44:0]}),
+	.status_set(statusUpdate),
+	.info_req(info_req),
+	.info(info),
 
 	.gamma_bus(gamma_bus),
 
@@ -480,6 +499,8 @@ hps_io #(.STRLEN(($size(CONF_STR)>>3) + ($size(CONF_STR2)>>3) + 2)) hps_io
 	.img_mounted(img_mounted),
 	.img_readonly(img_readonly),
 	.img_size(img_size),
+	 
+	.ps2_key(ps2_key),
 
 	.ps2_kbd_led_use(0),
 	.ps2_kbd_led_status(0),
@@ -489,6 +510,10 @@ hps_io #(.STRLEN(($size(CONF_STR)>>3) + ($size(CONF_STR2)>>3) + 2)) hps_io
 	//.uart_mode(16'b000_11111_000_11111)
 );
 
+assign joyA = joyA_unmod[23] ? 23'b0 : joyA_unmod;
+
+wire       info_req = diskside_info || ss_info_req;
+wire [7:0] info     = ss_info_req ? ss_info : {1'b0,diskside} + 3'd1;
 
 wire clock_locked;
 wire clk85;
@@ -858,10 +883,31 @@ end
 
 wire gg_reset = (type_fds | type_gg | type_nes | type_nsf) && ioctl_download;
 
+// pause
+reg       pausecore;
+reg [1:0] videopause_ce;
+wire      corepaused;
+wire      refresh;
+wire      sleep_savestate;
+
+assign FREEZE_IMAGE = corepaused;
+
+always_ff @(posedge clk) begin
+	pausecore <= sleep_savestate | (status[41] && OSD_STATUS && !ioctl_download && !reset_nes);
+	
+	if (!corepaused) begin
+		videopause_ce <= nes_ce + 1'd1;
+	end else begin
+		videopause_ce <= videopause_ce + 1'd1;
+	end 
+end
+
 NES nes (
 	.clk             (clk),
 	.reset_nes       (reset_nes),
 	.cold_reset      (downloading & (type_fds | type_nes)),
+	.pausecore       (pausecore),
+	.corepaused      (corepaused),
 	.sys_type        (status[24:23]),
 	.nes_div         (nes_ce),
 	.mapper_flags    (downloading ? 64'd0 : mapper_flags),
@@ -903,6 +949,7 @@ NES nes (
 	.ppumem_write    (ppu_write),
 	.ppumem_dout     (ppu_dout ),
 	.ppumem_din      (ppu_din  ),
+	.refresh         (refresh  ),
 
 	.prg_mask        (prg_mask ),
 	.chr_mask        (chr_mask ),
@@ -912,7 +959,36 @@ NES nes (
 	.bram_dout       (bram_dout),
 	.bram_write      (bram_write),
 	.bram_override   (bram_en),
-	.save_written    (save_written)
+	.save_written    (save_written),
+	
+	// savestates
+	.mapper_has_savestate    (mapper_has_savestate),
+	.increaseSSHeaderCount   (!status[44]),
+	.save_state              (ss_save),
+	.load_state              (ss_load),
+	.savestate_number        (ss_slot),
+	.sleep_savestate         (sleep_savestate),
+	
+	.Savestate_SDRAMAddr     (Savestate_SDRAMAddr     ),    
+	.Savestate_SDRAMRdEn     (Savestate_SDRAMRdEn     ),    
+	.Savestate_SDRAMWrEn     (Savestate_SDRAMWrEn     ),    
+	.Savestate_SDRAMWriteData(Savestate_SDRAMWriteData),
+	.Savestate_SDRAMReadData (Savestate_SDRAMReadData ),
+	
+	.SaveStateExt_Din        (SaveStateBus_Din),
+	.SaveStateExt_Adr        (SaveStateBus_Adr), 
+	.SaveStateExt_wren       (SaveStateBus_wren),
+	.SaveStateExt_rst        (SaveStateBus_rst),
+	.SaveStateExt_Dout       (SaveStateBus_Dout),
+	.SaveStateExt_load       (savestate_load),
+	
+	.SAVE_out_Din            (ss_din),           // data read from savestate
+	.SAVE_out_Dout           (ss_dout),          // data written to savestate
+	.SAVE_out_Adr            (ss_addr),          // all addresses are DWORD addresses!
+	.SAVE_out_rnw            (ss_rnw),           // read = 1, write = 0
+	.SAVE_out_ena            (ss_req),           // one cycle high for each action
+	.SAVE_out_be             (ss_be),           
+	.SAVE_out_done           (ss_ack)            // should be one cycle high when write is done or read value is valid
 );
 
 wire [24:0] cpu_addr;
@@ -982,6 +1058,13 @@ always @(posedge clk) begin
 	end
 end
 
+wire [24:0] ch2_addr = sleep_savestate ? Savestate_SDRAMAddr      : {7'b0001111, save_addr};
+wire        ch2_wr   = sleep_savestate ? Savestate_SDRAMWrEn      : save_wr;
+wire  [7:0] ch2_din  = sleep_savestate ? Savestate_SDRAMWriteData : sd_buff_dout;
+wire        ch2_rd   = sleep_savestate ? Savestate_SDRAMRdEn      : save_rd;   
+
+assign Savestate_SDRAMReadData = save_dout; 
+
 sdram sdram
 (
 	.*,
@@ -1006,12 +1089,17 @@ sdram sdram
 	.ch1_busy   ( ),
 
 	// reserved for backup ram save/load
-	.ch2_addr   ( {7'b0001111, save_addr} ),
-	.ch2_wr     ( save_wr ),
-	.ch2_din    ( sd_buff_dout ),
-	.ch2_rd     ( save_rd ),
+	.ch2_addr   ( ch2_addr ),
+	.ch2_wr     ( ch2_wr ),
+	.ch2_din    ( ch2_din ),
+	.ch2_rd     ( ch2_rd ),
 	.ch2_dout   ( save_dout ),
-	.ch2_busy   ( save_busy )
+	.ch2_busy   ( save_busy ),
+	
+	.refresh    (refresh  ),
+	.ss_in      (sdram_ss_in),
+	.ss_load    (savestate_load),
+	.ss_out     (sdram_ss_out)
 );
 
 wire  [7:0] save_dout;
@@ -1117,12 +1205,14 @@ wire ce_pix;
 wire HSync,VSync,HBlank,VBlank;
 wire [7:0] R,G,B;
 
+wire [1:0] nes_ce_video = corepaused ? videopause_ce : nes_ce;
+
 video video
 (
 	.*,
 	.clk(clk),
 	.reset(reset_nes),
-	.cnt(nes_ce),
+	.cnt(nes_ce_video),
 	.hold_reset(hold_reset),
 	.count_v(scanline),
 	.count_h(cycle),
@@ -1269,6 +1359,79 @@ always @(posedge clk) begin : save_block
 		end
 	end
 end
+
+///////////////////////////// savestates /////////////////////////////////
+
+wire [63:0] ss_dout, ss_din;
+wire [27:2] ss_addr;
+wire  [7:0] ss_be;
+wire        ss_rnw, ss_req, ss_ack;
+
+wire [24:0] Savestate_SDRAMAddr;     
+wire        Savestate_SDRAMRdEn;    
+wire        Savestate_SDRAMWrEn;    
+wire [7:0]  Savestate_SDRAMWriteData;
+wire [7:0]  Savestate_SDRAMReadData;
+
+wire [63:0] SaveStateBus_Din; 
+wire [9:0]  SaveStateBus_Adr; 
+wire        SaveStateBus_wren;
+wire        SaveStateBus_rst; 
+wire [63:0] SaveStateBus_Dout;
+wire        savestate_load;
+
+wire [15:0] sdram_ss_in = SS_Ext[15:0];
+wire [15:0] sdram_ss_out;
+
+wire [63:0] SS_Ext;
+wire [63:0] SS_Ext_BACK;
+eReg_SavestateV #(SSREG_INDEX_EXT, SSREG_DEFAULT_EXT) iREG_SAVESTATE_Ext (clk, SaveStateBus_Din, SaveStateBus_Adr, SaveStateBus_wren, SaveStateBus_rst, SaveStateBus_Dout, SS_Ext_BACK, SS_Ext);  
+
+assign SS_Ext_BACK[15: 0] = sdram_ss_out;  
+assign SS_Ext_BACK[63:16] = 48'b0; // free to be used
+
+assign DDRAM_CLK = clk;
+ddram ddram
+(
+	.*,
+
+	.ch1_addr({ss_addr, 1'b0}),
+	.ch1_din(ss_din),
+	.ch1_dout(ss_dout),
+	.ch1_req(ss_req),
+	.ch1_rnw(ss_rnw),
+	.ch1_be(ss_be),
+	.ch1_ready(ss_ack)
+);
+
+// saving with keyboard/OSD/gamepad
+wire [1:0] ss_slot;
+wire [7:0] ss_info;
+wire ss_save, ss_load, ss_info_req;
+wire mapper_has_savestate;
+wire statusUpdate;
+
+savestate_ui savestate_ui
+(
+	.clk            (clk           ),
+	.ps2_key        (ps2_key[10:0] ),
+	.allow_ss       (rom_loaded & mapper_has_savestate),
+	.joySS          (joyA_unmod[23]),
+	.joyRight       (joyA_unmod[0] ),
+	.joyLeft        (joyA_unmod[1] ),
+	.joyDown        (joyA_unmod[2] ),
+	.joyUp          (joyA_unmod[3] ),
+	.joyStart       (joyA_unmod[7] ),
+	.status_slot    (status[46:45] ),
+	.OSD_saveload   (status[43:42] ),
+	.ss_save        (ss_save       ),
+	.ss_load        (ss_load       ),
+	.ss_info_req    (ss_info_req   ),
+	.ss_info        (ss_info       ),
+	.statusUpdate   (statusUpdate  ),
+	.selected_slot  (ss_slot       )
+);
+defparam savestate_ui.INFO_TIMEOUT_BITS = 25;
 
 endmodule
 
